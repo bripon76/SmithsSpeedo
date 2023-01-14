@@ -1,0 +1,119 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="icon" href="/logo.png">
+    <link rel="stylesheet" href="./style.css">
+
+    <meta charset="utf-8">
+    <meta name="description" content="My description">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>SmithsDash</title>
+</head>
+
+<body>
+    <header>
+        <nav>
+            <a href="index.html"><img alt="Logo" src="logo.png" height="70"></a>
+            <name><a href=index.html>SmithsDash</a></name>
+            <ul>
+                <li><a href="download.html">LogFile</a></li>
+                <li><a href="about.html">About</a>
+                </li>
+            </ul>
+        </nav>
+        <h1>Übersicht</h1>
+        
+        <table>
+                <tr>
+                    <td>Gesamt KM:</td>
+                    <td><p id="TotalKm">No Data!</p></td>
+                </tr>
+                <tr>
+                    <td>Tageskilometer:</td>
+                    <td><p id="DayKm">No Data!</p></td>
+                </tr>
+                <tr>
+                    <td>∅ Geschwindigkeit:</td>
+                    <td><p id="AverageKmh">No Data!</p></td>
+                </tr>
+                <tr>
+                    <td>∅ Verbrauch:</td>
+                    <td><p id="AverageFuel">No Data!</p></td>
+                </tr>
+                <tr>
+                    <td>Resttank:</td>
+                    <td><p id="Fuel">No Data!</p></td>
+                </tr>
+                <tr>
+                    <td>TopSpeed:</td>
+                    <td><p id="TopSpeed">No Data!</p></td>
+                </tr>
+            </table>
+    </header>
+    <footer>
+        <hr>
+        <p>
+            <small>SmithsDash by Ennar1991 &amp; bripon76 </small>
+        </p>
+    </footer>
+    
+    <!-- WebSockets -->
+    
+<script>
+    //Quelle: https://randomnerdtutorials.com/esp32-websocket-server-arduino/
+    //Client-Seite
+  var gateway = `ws://${window.location.hostname}/ws`;
+  var websocket;
+  function initWebSocket() {
+    console.log('Trying to open a WebSocket connection...');
+    websocket = new WebSocket(gateway);
+    websocket.onopen    = onOpen;
+    websocket.onclose   = onClose;
+    websocket.onmessage = onMessage; // <-- add this line
+  }
+  function onOpen(event) {
+    console.log('Connection opened');
+  }
+
+  function onClose(event) {
+    console.log('Connection closed');
+    setTimeout(initWebSocket, 2000);
+  }
+    
+    
+  //diese Funktion wird immer dann aufgerufen, wenn ein Message Event passiert ist
+  function onMessage(event) {
+      
+      try{
+      var data=JSON.parse(event.data);
+//{"TotalKm":150510,"DayKm":19,"AverageKmh":34,"AverageFuel":5.4,"Fuel":17,"TopSpeed":172}
+      //document.getElementById("Para0").innerHTML="Windrichtung: "+data.WIND;
+      document.getElementById("TotalKm").innerHTML=data.TotalKm+" km";
+      document.getElementById("DayKm").innerHTML=data.DayKm+" km";
+      document.getElementById("AverageKmh").innerHTML=data.AverageKmh+" km/h";
+      document.getElementById("AverageFuel").innerHTML=data.AverageFuel+" l";
+      document.getElementById("Fuel").innerHTML=data.Fuel+" l";
+      document.getElementById("TopSpeed").innerHTML=data.TopSpeed+" km/h";
+  
+    document.getElementById('serial').innerHTML = event.data;
+   }
+ catch(e) {
+   document.getElementById("ConnState").innerHTML="<h2>JSON Error</h2>";
+  }
+ }
+   
+    
+    
+  window.addEventListener('load', onLoad);
+
+  function onLoad(event) {
+    initWebSocket();
+
+  }
+</script>
+    
+    </body>
+</html>
