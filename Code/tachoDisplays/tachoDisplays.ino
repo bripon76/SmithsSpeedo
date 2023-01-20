@@ -20,7 +20,7 @@
 SwitecX25 motor1(STEPS, 4, 5, 6, 7);
 
 U8G2_SH1106_128X64_NONAME_1_HW_I2C fuel(U8G2_R2, /* reset=*/ U8X8_PIN_NONE); //Grosses Display (FUEL) X:10..117 Y:17..44
-U8G2_SSD1306_128X32_UNIVISION_1_HW_I2C kilometer(U8G2_R2, /* reset=*/ U8X8_PIN_NONE);  //kleines Display (Kilometerstand)
+U8G2_SSD1306_128X32_UNIVISION_1_HW_I2C kilometer(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);  //kleines Display (Kilometerstand)
 
 
 unsigned long totalkilometers = 0; //1503880; //x10
@@ -116,7 +116,8 @@ void setup() {
 
     fuel.setFont(u8g2_font_logisoso16_tr);
     fuel.setFontPosTop();
-    fuel.drawStr(37, 24, "SMITHS");
+    fuel.drawStr(37, 22, "SMITHS");
+    fuel.drawStr(37, 40, "Digital");
   } while ( fuel.nextPage() );
 
 
@@ -125,7 +126,7 @@ void setup() {
   kilometer.firstPage();
   do {
     kilometer.setFont(u8g2_font_logisoso22_tn);
-    kilometer.drawStr(0, 22, kilometerBuffer);
+    kilometer.drawStr(0, 28, kilometerBuffer);
   } while ( kilometer.nextPage());
   motor1.setPosition(STEPS_MAXRANGE);
   motor1.updateBlocking();

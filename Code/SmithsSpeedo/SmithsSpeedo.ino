@@ -18,6 +18,10 @@
 #define STEPS_MAXRANGE 850 /* Rechte Seite FUEL Ausschnitt*/
 #include <SwitecX25.h>
 
+//SoftwareSerial
+#include <SoftwareSerial.h>
+SoftwareSerial mySerial(2, 3); // RX, TX
+
 // standard X25.168 range 315 degrees at 1/3 degree steps
 #define STEPS (315*3)
 // For motors connected to digital pins 4,5,6,7
@@ -36,6 +40,7 @@ int kilometerTimeout = 0; //Zeitmessung für Kilometer speichern im Stand
 #define KILOMETER_TIMEOUT_SECONDS 10 /*Timeout in Sekunden*/
 int tagesKilometerReset=0; //Tageskilometerzähler letzter Reset-Stand
 char tagesKilometerBuffer[8]={};//Textpuffer für Tageskilometerdisplay
+
 
 unsigned long displayKilometers=0; //Zwischenspeicher für Displays (Berechnung Kilometerstand aus Pulsen)
 
@@ -151,9 +156,16 @@ DHT dht(DHTPIN, DHTTYPE);
 
 void setup() {
   Serial.begin(9600);
+
+  //Softwareserial
+  // set the data rate for the SoftwareSerial port
+  mySerial.begin(9600);
+  mySerial.println("Hello, world?");
+
   //Kilometerstand aus EEPROM holen
   totalKilometers = readEepromWL24();
   tagesKilometerReset = readEeprom24(256); //256...258
+
   
   Serial.println(totalKilometers);
 
@@ -195,9 +207,10 @@ void setup() {
 
     fuel.setFont(u8g2_font_logisoso16_tr);
     fuel.setFontPosTop();
-    fuel.drawStr(12, 24, "SMITHS V1.0");
-    fuel.drawStr(15, 42, "NR '21-22");
+    fuel.drawStr(37, 22, "SMITHS");
+    fuel.drawStr(37, 40, "Digital");
   } while ( fuel.nextPage() );
+
 
 
   kilometerText(totalKilometers);
@@ -214,12 +227,13 @@ void setup() {
   motor1.setPosition(0);
   motor1.updateBlocking();
 
-  Serial.println("unfiltered\tfiltered");
+  //Serial.println("unfiltered\tfiltered");
 }
 
 uint32_t globalMillis = 0;
 
 void loop() {
+
 
 
   globalMillis = millis();
@@ -230,12 +244,12 @@ void loop() {
     if (timerSteps != 0) tempKmh = (3.6 * (CIRCUMFERENCE / STEPS_REV) / (0.000016 * (double)timerSteps));
     else tempKmh = 0;
     kmh = (0.9 * lastKmh) + (0.1 * tempKmh); //Filterfunktion
-    Serial.print(tempKmh); Serial.print('\t'); Serial.println(kmh);
+    //Serial.print(tempKmh); Serial.print('\t'); Serial.println(kmh);
 
 
     lastKmh = kmh;
 
-    Serial.print(lastKmh);
+    //Serial.print(lastKmh);
 
     int nextPos = kmh;
     if (nextPos > maxSpeed)nextPos = maxSpeed;
@@ -262,7 +276,7 @@ void loop() {
     displayKilometers = totalKilometers + ((totalPulses / STEPS_REV) * CIRCUMFERENCE) / 100;
     kilometerText(displayKilometers);
     drawKilometer();
-    Serial.print(displayKilometers);
+    //Serial.print(displayKilometers);
     }
 
 
@@ -275,8 +289,8 @@ void loop() {
     // Read temperature as Celsius (the default)
     temperature = dht.readTemperature();
   }
-  
 
+ 
   // put your main code here, to run repeatedly:
   if (globalMillis > nextNeedleMillis) {
     nextNeedleMillis = globalMillis + 1000;
@@ -343,19 +357,23 @@ void loop() {
         
         fuel.setCursor(10, 45);
         fuel.print((int)temperature);
-        fuel.print("C");
+        fuel.print("*C");
 
         //Tageskilometerzähler
         fuel.setCursor(70, 45);
         tagesKilometerText(displayKilometers-tagesKilometerReset);
         fuel.print(tagesKilometerBuffer);
-        Serial.print(tagesKilometerBuffer);
+        //Serial.print(tagesKilometerBuffer);
       }
     } while ( fuel.nextPage());
   }
 
   // the motor only moves when you call update
   motor1.update();
+
+espsenddata();
+
+
 }
 
 //Kilometerstand speichern
@@ -441,7 +459,7 @@ void drawKilometer() {
   kilometer.firstPage();
   do {
     kilometer.setFont(u8g2_font_logisoso22_tn);
-    kilometer.drawStr(0, 24, kilometerBuffer);
+    kilometer.drawStr(0, 28, kilometerBuffer);
   } while ( kilometer.nextPage());
 }
 
@@ -458,4 +476,23 @@ void freqMeasure() {
   TCCR1B = (1 << CS12); //Start Timer1
   TCNT1 = 0; //Reset Timer1
   totalPulses++;
+}
+
+void espsenddata(){
+  #define SEPARATION_CHAR ','
+  //ESP Data
+  //{"TotalKm":150510,"DayKm":19,"AverageKmh":34,"AverageFuel":5.4,"Fuel":17,"TopSpeed":172}
+  mySerial.print("{");
+  mySerial.print(F("\"TotalKm\":\"")); mySerial.print(totalKilometers); mySerial.print('\"'); mySerial.print(SEPARATION_CHAR);
+  mySerial.print(F("\"DayKm\":\"")); mySerial.print(tagesKilometerBuffer); mySerial.print('\"'); mySerial.print(SEPARATION_CHAR);
+  mySerial.print(F("\"AverageKmh\":\"")); mySerial.print("Demo"); mySerial.print('\"'); mySerial.print(SEPARATION_CHAR);
+  mySerial.print(F("\"AverageFuel\":\"")); mySerial.print("Demo"); mySerial.print('\"'); mySerial.print(SEPARATION_CHAR);
+  mySerial.print(F("\"Fuel\":\"")); mySerial.print("Demo"); mySerial.print('\"'); mySerial.print(SEPARATION_CHAR);
+  mySerial.print(F("\"TopSpeed\":\"")); mySerial.print("Demo"); mySerial.print('\"');
+  mySerial.print("}");
+  //Finally, print a newline.
+  mySerial.println();
+  
+  delay(2000);
+
 }
